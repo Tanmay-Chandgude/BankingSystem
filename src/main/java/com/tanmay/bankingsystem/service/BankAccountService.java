@@ -14,6 +14,8 @@ import com.tanmay.bankingsystem.exception.InvalidTransferException;
 import org.springframework.transaction.annotation.Transactional;
 import com.tanmay.bankingsystem.entity.BankTransaction;
 import com.tanmay.bankingsystem.repository.BankTransactionRepository;
+import com.tanmay.bankingsystem.dto.WithdrawalRequest;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -101,6 +103,37 @@ public class BankAccountService {
 
         bankTransactionRepository.save(transaction);
     }
+
+
+    @Transactional
+    public void withdrawMoney(WithdrawalRequest request) {
+
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidTransferException(
+                    "Withdrawal amount must be greater than zero");
+        }
+
+        BankAccount account = getAccountById(request.getAccountId());
+
+        if (account.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new InsufficientBalanceException(
+                    "Insufficient balance for withdrawal");
+        }
+
+        account.setBalance(
+                account.getBalance().subtract(request.getAmount()));
+
+        bankAccountRepository.save(account);
+
+        BankTransaction transaction = new BankTransaction(
+                account.getId(),
+                null,
+                request.getAmount().negate()
+        );
+
+        bankTransactionRepository.save(transaction);
+    }
+
 
 
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.tanmay.bankingsystem.dto.TransferRequest;
+import com.tanmay.bankingsystem.dto.WithdrawalRequest;
 
 import java.util.List;
 
@@ -57,5 +58,14 @@ public class BankAccountController {
         return ResponseEntity.ok("Money transferred successfully");
     }
 
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<String> withdrawMoney(
+            @Valid @RequestBody WithdrawalRequest request) {
+
+        bankAccountService.withdrawMoney(request);
+
+        return ResponseEntity.ok("ATM withdrawal successful");
+    }
 
 }
