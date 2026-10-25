@@ -1,51 +1,85 @@
-
 package com.tanmay.bankingsystem.exception;
 
-import com.tanmay.bankingsystem.exception.AccountNotFoundException;
+import com.tanmay.bankingsystem.dto.ErrorResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import java.util.stream.Collectors;
-import com.tanmay.bankingsystem.exception.AccountAlreadyExistsException;
+import com.tanmay.bankingsystem.exception.InsufficientBalanceException;
+import com.tanmay.bankingsystem.exception.InvalidTransferException;
 
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(InvalidAccountException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidAccount(
-            InvalidAccountException ex) {
+    private ErrorResponse buildErrorResponse(
+            HttpStatus status,
+            String error,
+            String message,
+            HttpServletRequest request) {
 
-        Map<String, String> error = Map.of(
-                "error", "Invalid Account",
-                "message", ex.getMessage()
+        return new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                error,
+                message,
+                request.getRequestURI()
         );
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(error);
+    @ExceptionHandler(InvalidAccountException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidAccount(
+            InvalidAccountException ex,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        return ResponseEntity.status(status).body(
+                buildErrorResponse(
+                        status, "Invalid Account",
+                        ex.getMessage(), request
+                )
+        );
     }
 
     @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleAccountNotFound(
-            AccountNotFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleAccountNotFound(
+            AccountNotFoundException ex,
+            HttpServletRequest request) {
 
-        Map<String, String> error = Map.of(
-                "error", "Account Not Found",
-                "message", ex.getMessage()
+        HttpStatus status = HttpStatus.NOT_FOUND;
+
+        return ResponseEntity.status(status).body(
+                buildErrorResponse(
+                        status, "Account Not Found",
+                        ex.getMessage(), request
+                )
         );
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(error);
+    @ExceptionHandler(AccountAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleAccountAlreadyExists(
+            AccountAlreadyExistsException ex,
+            HttpServletRequest request) {
+
+        HttpStatus status = HttpStatus.CONFLICT;
+
+        return ResponseEntity.status(status).body(
+                buildErrorResponse(
+                        status, "Account Already Exists",
+                        ex.getMessage(), request
+                )
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationErrors(
-            MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationErrors(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
 
         String message = ex.getBindingResult()
                 .getFieldErrors()
@@ -54,30 +88,48 @@ public class GlobalExceptionHandler {
                         + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
 
-        Map<String, String> error = Map.of(
-                "error", "Validation Failed",
-                "message", message
-        );
+        HttpStatus status = HttpStatus.BAD_REQUEST;
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(error);
+        return ResponseEntity.status(status).body(
+                buildErrorResponse(
+                        status, "Validation Failed",
+                        message, request
+                )
+        );
     }
 
-    @ExceptionHandler(AccountAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleAccountAlreadyExists(
-            AccountAlreadyExistsException ex) {
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientBalance(
+            InsufficientBalanceException ex,
+            HttpServletRequest request) {
 
-        Map<String, String> error = Map.of(
-                "error", "Account Already Exists",
-                "message", ex.getMessage()
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        return ResponseEntity.status(status).body(
+                buildErrorResponse(
+                        status,
+                        "Insufficient Balance",
+                        ex.getMessage(),
+                        request
+                )
         );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(error);
     }
 
+    @ExceptionHandler(InvalidTransferException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidTransfer(
+            InvalidTransferException ex,
+            HttpServletRequest request) {
 
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        return ResponseEntity.status(status).body(
+                buildErrorResponse(
+                        status,
+                        "Invalid Transfer",
+                        ex.getMessage(),
+                        request
+                )
+        );
+    }
 
 }

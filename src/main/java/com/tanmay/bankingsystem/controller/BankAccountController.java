@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import com.tanmay.bankingsystem.dto.TransferRequest;
 
 import java.util.List;
 
@@ -45,5 +46,16 @@ public class BankAccountController {
         BankAccount account = bankAccountService.getAccountById(id);
         return ResponseEntity.ok(account);
     }
+
+
+    @PostMapping("/transfer")
+    public ResponseEntity<String> transferMoney(
+            @Valid @RequestBody TransferRequest request) {
+
+        bankAccountService.transferMoney(request);
+
+        return ResponseEntity.ok("Money transferred successfully");
+    }
+
 
 }

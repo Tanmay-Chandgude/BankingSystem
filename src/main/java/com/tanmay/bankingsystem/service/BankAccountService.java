@@ -8,6 +8,10 @@ import com.tanmay.bankingsystem.exception.InvalidAccountException;
 import java.math.BigDecimal;
 import com.tanmay.bankingsystem.exception.AccountNotFoundException;
 import com.tanmay.bankingsystem.exception.AccountAlreadyExistsException;
+import com.tanmay.bankingsystem.dto.TransferRequest;
+import com.tanmay.bankingsystem.exception.InsufficientBalanceException;
+import com.tanmay.bankingsystem.exception.InvalidTransferException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,5 +58,34 @@ public class BankAccountService {
                         )
                 );
     }
+
+    @Transactional
+    public void transferMoney(TransferRequest request) {
+
+        if (request.getFromAccountId().equals(request.getToAccountId())) {
+            throw new InvalidTransferException(
+                    "Cannot transfer money to the same account");
+        }
+
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidTransferException(
+                    "Transfer amount must be greater than zero");
+        }
+
+        BankAccount sender = getAccountById(request.getFromAccountId());
+        BankAccount receiver = getAccountById(request.getToAccountId());
+
+        if (sender.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new InsufficientBalanceException(
+                    "Insufficient balance in sender account");
+        }
+
+        sender.setBalance(sender.getBalance().subtract(request.getAmount()));
+        receiver.setBalance(receiver.getBalance().add(request.getAmount()));
+
+        bankAccountRepository.save(sender);
+        bankAccountRepository.save(receiver);
+    }
+
 
 }
