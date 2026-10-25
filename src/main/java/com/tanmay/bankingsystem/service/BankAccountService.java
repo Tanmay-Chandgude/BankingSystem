@@ -12,6 +12,8 @@ import com.tanmay.bankingsystem.dto.TransferRequest;
 import com.tanmay.bankingsystem.exception.InsufficientBalanceException;
 import com.tanmay.bankingsystem.exception.InvalidTransferException;
 import org.springframework.transaction.annotation.Transactional;
+import com.tanmay.bankingsystem.entity.BankTransaction;
+import com.tanmay.bankingsystem.repository.BankTransactionRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +22,15 @@ import java.util.Optional;
 public class BankAccountService {
 
     private final BankAccountRepository bankAccountRepository;
+    private final BankTransactionRepository bankTransactionRepository;
 
-    public BankAccountService(BankAccountRepository bankAccountRepository) {
+
+    public BankAccountService(
+            BankAccountRepository bankAccountRepository,
+            BankTransactionRepository bankTransactionRepository) {
+
         this.bankAccountRepository = bankAccountRepository;
+        this.bankTransactionRepository = bankTransactionRepository;
     }
 
     public BankAccount createAccount(BankAccount account) {
@@ -85,6 +93,13 @@ public class BankAccountService {
 
         bankAccountRepository.save(sender);
         bankAccountRepository.save(receiver);
+        BankTransaction transaction = new BankTransaction(
+                sender.getId(),
+                receiver.getId(),
+                request.getAmount()
+        );
+
+        bankTransactionRepository.save(transaction);
     }
 
 
