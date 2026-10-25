@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.tanmay.bankingsystem.entity.BankTransaction;
 import com.tanmay.bankingsystem.repository.BankTransactionRepository;
 import com.tanmay.bankingsystem.dto.WithdrawalRequest;
-
+import com.tanmay.bankingsystem.service.FailedTransactionService;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,14 +25,17 @@ public class BankAccountService {
 
     private final BankAccountRepository bankAccountRepository;
     private final BankTransactionRepository bankTransactionRepository;
+    private final FailedTransactionService failedTransactionService;
 
 
     public BankAccountService(
             BankAccountRepository bankAccountRepository,
-            BankTransactionRepository bankTransactionRepository) {
+            BankTransactionRepository bankTransactionRepository,
+            FailedTransactionService failedTransactionService) {
 
         this.bankAccountRepository = bankAccountRepository;
         this.bankTransactionRepository = bankTransactionRepository;
+        this.failedTransactionService = failedTransactionService;
     }
 
     public BankAccount createAccount(BankAccount account) {
@@ -86,6 +89,15 @@ public class BankAccountService {
         BankAccount receiver = getAccountById(request.getToAccountId());
 
         if (sender.getBalance().compareTo(request.getAmount()) < 0) {
+
+            failedTransactionService.recordFailure(
+                    "TRANSFER",
+                    sender.getId(),
+                    receiver.getId(),
+                    request.getAmount(),
+                    "Insufficient balance"
+            );
+
             throw new InsufficientBalanceException(
                     "Insufficient balance in sender account");
         }
@@ -115,10 +127,21 @@ public class BankAccountService {
 
         BankAccount account = getAccountById(request.getAccountId());
 
+
         if (account.getBalance().compareTo(request.getAmount()) < 0) {
+
+            failedTransactionService.recordFailure(
+                    "WITHDRAWAL",
+                    account.getId(),
+                    null,
+                    request.getAmount(),
+                    "Insufficient balance"
+            );
+
             throw new InsufficientBalanceException(
                     "Insufficient balance for withdrawal");
         }
+
 
         account.setBalance(
                 account.getBalance().subtract(request.getAmount()));
